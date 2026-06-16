@@ -1,73 +1,45 @@
-from pytest import mark  # Импортируем декоратор для маркировки тестов
-
-from utils.btc_response import BTC_RESPONSE  # Импортируем фикстуру с данными по BTC
-from utils.eth_response import ETH_RESPONSE  # Импортируем фикстуру с данными по ETH
+from pytest import mark
 
 
-@mark.btc  # Маркируем тест как относящийся к BTC
-def test_yabit_btc_tokenId():
-    # Извлекаем список предложений из ответа API
-    items = BTC_RESPONSE['result']['items']
-    
-    # Проверяем КАЖДОЕ предложение в цикле
-    for offer in items:
-        # Проверка токена и валюты
-        assert offer['tokenId'] == 'BTC', \
-            f"Неверный токен: {offer['tokenId']}"
+@mark.parametrize("check_type, expected_value", [
+    ('token', 'tokenId'),
+    ('currency', 'currencyId'),
+    ('price_positive', 'price'),
+    ('quantity_positive', 'quantity')
+], ids=['token_check', 'currency_check', 'price_check', 'quantity_check'])
+def test_offers_data(crypto_data, check_type, expected_value):
+    """
+    Универсальный тест для проверки всех параметров ордеров
+    """
+    items = crypto_data['items']
+    token = crypto_data['token']
+
+    if check_type == 'token':
+        for offer in items:
+            assert offer[expected_value] == token, (
+                f"Неверный токен: {offer[expected_value]}. Ожидался: {token}"
+            )
+
+    elif check_type == 'currency':
+        for offer in items:
+            assert offer[expected_value] == 'RUB', (
+                f"Неверная валюта: {offer['currencyId']}"
+            )
+
+    else:
+        for offer in items:
+            assert float(offer[expected_value]) > 0, (
+                f"Цена или количество {token} должны быть положительными"
+            )
 
 
-@mark.btc
-def test_yabit_btc_currencyId():
-    items = BTC_RESPONSE['result']['items']
-    for offer in items:
-        # Проверка валюты
-        assert offer['currencyId'] == 'RUB', \
-            f"Неверная валюта: {offer['currencyId']}"
+def test_offers_count(crypto_data):
+    """
+    Проверяем количество предложений для каждой криптовалюты
+    """
+    items = crypto_data['items']
+    token = crypto_data['token']
 
-
-@mark.btc
-def test_yabit_btc_len_offers():
-    items = BTC_RESPONSE['result']['items']
-    assert len(items) == 10, f"Выводится {len(items)} предложений"
-
-
-@mark.btc
-def test_yabit_btc_optional_key():
-    items = BTC_RESPONSE['result']['items']
-    for offer in items:
-        # Дополнительные проверки (опционально)
-        assert float(offer['price']) > 0, "Цена должна быть положительной"
-        assert float(offer['quantity']) > 0, "Количество BTC должно быть > 0"
-
-
-@mark.eth
-def test_yabit_eth_tokenId():
-    items = ETH_RESPONSE['result']['items']
-    for offer in items:
-        # Проверка токена и валюты
-        assert offer['tokenId'] == 'ETH', \
-            f"Неверный токен: {offer['tokenId']}"
-
-
-@mark.eth
-def test_yabit_eth_currencyId():
-    items = ETH_RESPONSE['result']['items']
-    for offer in items:
-        # Проверка валюты
-        assert offer['currencyId'] == 'RUB', \
-            f"Неверная валюта: {offer['currencyId']}"
-
-
-@mark.eth
-def test_yabit_eth_len_offers():
-    items = ETH_RESPONSE['result']['items']
-    assert len(items) == 10, f"Выводится {len(items)} предложений"
-
-
-@mark.eth
-def test_yabit_eth_optional_key():
-    items = ETH_RESPONSE['result']['items']
-    for offer in items:
-        # Дополнительные проверки (опционально)
-        assert float(offer['price']) > 0, "Цена должна быть положительной"
-        assert float(offer['quantity']) > 0, "Количество ETH должно быть > 0"
+    assert len(items) == 10, (
+        f"Для {token} выводится {len(items)} предложений вместо 10"
+        )

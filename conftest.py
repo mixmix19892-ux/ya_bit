@@ -1,10 +1,16 @@
 import pytest
 
 
+pytest_plugins = [
+    'fixtures.fixtures_offers_data',
+]
+
+
 @pytest.fixture
 def sample_numbers():
     """Возвращает кортеж с числами для тестирования"""
     return (5, 10, 15)
+
 
 @pytest.fixture(scope="session")
 def temporary_data():
